@@ -1,3 +1,9 @@
+
+'''
+Script containing the functions utilities for multiples
+'''
+
+
 from qiskit import QuantumCircuit
 from collections import namedtuple
 import qiskit
@@ -94,9 +100,9 @@ def grover_diffuser(nqubits:int):
     return circuit
 
 
-"""
+'''
 n-qubit controlled gate
-"""
+'''
 
 def multi_control_z(nqubits):
     circuit = QuantumCircuit(nqubits,name=' CZ (%d)' %(nqubits))
@@ -108,7 +114,7 @@ def multi_control_z(nqubits):
 
 
 def mc_gate(gate: np.ndarray, circuit: qiskit.QuantumCircuit, controls: list, targ: int):
-    """
+    '''
     Parameters
     ----------
     gate: 2 X 2 unitary gate
@@ -117,7 +123,7 @@ def mc_gate(gate: np.ndarray, circuit: qiskit.QuantumCircuit, controls: list, ta
     targ: target qubit
     Returns
     -------
-    """
+    '''
 
     n_qubits = len(controls) + 1
     gate_circuit = qiskit.QuantumCircuit(n_qubits, name="T" + str(targ))

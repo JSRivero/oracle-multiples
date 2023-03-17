@@ -1,6 +1,6 @@
 '''
-Este script contiene funciones que generan los circuitos que realizan operaciones
-mas basicas. Sumar, restar, etc
+Script containing the functions needed to perform the basic operations
+of adding and modulo adding (using Draper algorithm)
 '''
 
 from qiskit import QuantumCircuit
