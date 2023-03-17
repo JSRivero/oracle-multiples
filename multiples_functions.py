@@ -35,6 +35,9 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
         - init_H (bool): Bool to say wheter H gates are applied to the input qubits (True), in order
         to obtain the whole circuit, or just the oracle (False), to just get the oracle for marking.
 
+        - classic_register (bool): Bool which says whether to add a classical register to the circuit or not.
+        By default is None, which assigns the same value assigned to init_H.
+
     Output:
         - circuit (QuantumCircuit): QuantumCircuit which marks states representing natural numbers
         which are multiples of k from 0 to 2^{nqubits_input}-1.
@@ -46,7 +49,7 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
 
 
     if classic_register is None:
-        classic_register = not init_H
+        classic_register = init_H
     else:
         pass
 
@@ -72,7 +75,6 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
         circuit = QuantumCircuit(input_register,
                                 remainders,
                                 ancilla,
-                                classic_multiples,
                                 name = name)
     
     # Full superposition to the input register
