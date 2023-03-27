@@ -8,8 +8,10 @@ import utilities_multiples as ut_multiples
 import operations as ops
 
 
-def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumCircuit=None,
-                     qubits_oracle:list=None, name:str=None, init_H:bool=False, classic_register:bool=None):
+def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0,
+                     oracle:QuantumCircuit=None, qubits_oracle:list=None,
+                     qubits_control:list=None, state_control:list=None,
+                     name:str=None, init_H:bool=False, classic_register:bool=None):
     '''
     Builder of the multiples oracle.
 
@@ -28,6 +30,17 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
         - qubits_oracle (list): Qubits on which the oracle extra is to be applied.
         By default is None. If it is not provided, the oracle would be
         applied to all the qubits in the input register.
+
+        - qubits_control (list): Qubits on which the oracle extra is to be controlled.
+        By default None. If None, the oracle applies without any control.
+
+        - state_control (list): States on which the qubits_control have to be to activate
+        the controlled oracle.
+        If qubits_control are provided, state_controlt has to have the same length as qubits_control
+        For instance, if there are 3 qubits control and state_control=[0, 0, 1],
+        the states on which it is control is 0, 0, 1, applying the gates ID x ID x NOT, to the state |q2 q1 q0>.
+        However, if qubits_control is not provided, state_control has to have the same length as qubits_oracle.
+        The same applies as for the control, but for the qubits of the oracle.
 
         - name (str): Name of the circuit/oracle. By default None. If none is provided then
         the number assigned is "Multiples of k".
@@ -109,8 +122,7 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
     circuit.append(QFT(num_qubits=len(remainders), do_swaps=False, inverse=True, approximation_degree=approx_QFT), remainders)
 
 
-    # X gates to use the |0...0> states to activate the gates
-    circuit.x(remainders[:-1])
+    
 
     # Apply the extra oracle
     if oracle:
@@ -119,12 +131,65 @@ def oracle_multiples(k:int, nqubits_input:int, approx_QFT:int=0, oracle:QuantumC
             qubits_oracle = input_register
         else:
             pass
-        circuit.append(oracle, qubits_oracle)
+
+        if qubits_control:
+            # Configure the state_control
+            if not state_control: #If not state_control is provided, by default it takes state_control = [0, ..., 0]
+                qubits_apply_not_gate = qubits_control
+                # state_control = [0]*len(qubits_control) # Initial way of putting it
+            else:  
+                # Assert length is the same
+                assert len(qubits_control)==len(state_control)
+                qubits_apply_not_gate = [qubits_control[i] for i, state in enumerate(state_control[::-1]) if state==0]
+                # Reverse the array so it follows qiskit 
+                # qubits_apply_not_gate = qubits_apply_not_gate
+
+            # Negate qubits in state 0 so the state provided activates the control
+            if qubits_apply_not_gate:
+                circuit.x(qubits_apply_not_gate)
+            else:
+                pass
+
+            circuit.append(oracle.to_gate().control(len(qubits_control)), qubits_control + qubits_oracle)
+
+            # Negate qubits in state 0 so the state provided activates the control
+            if qubits_apply_not_gate:
+                circuit.x(qubits_apply_not_gate)
+            else:
+                pass
+        
+        else:
+            # Configure the state_control
+            if not state_control: #If not state_control is provided, by default it takes state_control = [0, ..., 0]
+                qubits_apply_not_gate = qubits_oracle
+                # state_control = [0]*len(qubits_oracle) # Initial way of putting it
+            else:
+                # Assert length is the same
+                assert len(qubits_oracle)==len(state_control)
+                qubits_apply_not_gate = [qubits_oracle[i] for i, state in enumerate(state_control[::-1]) if state==0]
+                # Reverse the array so it follows the qiskit 
+                # qubits_apply_not_gate = qubits_apply_not_gate
+
+            # Negate qubits in state 0 so the state provided activates the control
+            if qubits_apply_not_gate:
+                circuit.x(qubits_apply_not_gate)
+            else:
+                pass
+
+            circuit.append(oracle.to_gate(), qubits_oracle)
+
+            # Negate qubits in state 0 so the state provided activates the control
+            if qubits_apply_not_gate:
+                circuit.x(qubits_apply_not_gate)
+            else:
+                pass
+
     else: #Otherwise, just mark the multiples
+        # X gates to use the |0...0> states to activate the gates
+        circuit.x(remainders[:-1])
         circuit.append(ut_multiples.multi_control_z(len(remainders)-1), remainders[:-1])
-    
-    # Undo the X gates
-    circuit.x(remainders[:-1])
+        # Undo the X gates
+        circuit.x(remainders[:-1])
 
     # Apply QFT to remainders register to sum on the phase space
     circuit.append(QFT(num_qubits=len(remainders), do_swaps=False, inverse=False, approximation_degree=approx_QFT), remainders)
